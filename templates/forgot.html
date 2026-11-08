@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:420px">
+<h1>Set or reset password</h1>
+<form method="post">{{ csrf_field() }}
+  <label>Email</label><input type="email" name="email" required autofocus>
+  <p><button>Send link</button></p>
+</form>
+</div>
+{% endblock %}

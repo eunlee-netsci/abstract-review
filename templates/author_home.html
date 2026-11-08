@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row" style="justify-content:space-between">
+  <h1>My submissions</h1>
+  {% if submissions_open() or current_user.is_admin %}<a class="btn" href="{{ url_for('submit') }}">+ New submission</a>{% endif %}
+</div>
+<p class="muted small">Submission deadline: {{ fmt_dt(S('submission_deadline')) }}{% if not submissions_open() %} · <b>closed</b>{% endif %}</p>
+{% for s in subs %}
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h3 style="margin:0">#{{ s.id }} · {{ s.title }}</h3>
+    {% if not s.active %}<span class="badge err">withdrawn</span>
+    {% elif released and s.decision %}<span class="badge {{ 'ok' if s.decision in ('oral','poster') else 'err' }}">{{ DECISION_LABEL[s.decision] }}</span>
+    {% else %}<span class="badge">submitted</span>{% endif %}
+  </div>
+  <p class="small muted">{% for a in s.authors %}{{ a.name }} ({{ a.affiliation }}){% if not loop.last %}, {% endif %}{% endfor %}</p>
+  <p>{% for k in s.keyword_list %}<span class="tag">{{ k }}</span>{% endfor %}</p>
+  <p class="small">{% if s.pdf_name %}<a href="{{ url_for('submission_pdf', sid=s.id) }}" target="_blank">📄 {{ s.pdf_name }}</a>{% else %}<span class="muted">no PDF</span>{% endif %}</p>
+  {% if s.active and submissions_open() %}
+  <div class="row">
+    <a class="btn small secondary" href="{{ url_for('edit_submission', sid=s.id) }}">Edit</a>
+    <form class="inline" method="post" action="{{ url_for('withdraw_submission', sid=s.id) }}" onsubmit="return confirm('Withdraw this submission?')">{{ csrf_field() }}<button class="small danger">Withdraw</button></form>
+  </div>
+  {% endif %}
+  {% if released and share and s.active and s.decision %}
+    {% set revs = s.assignments|selectattr('review')|rejectattr('conflict')|list %}
+    {% if revs %}<h3>Reviewer comments</h3>
+    {% for a in revs %}{% if a.review.comments_author %}<div class="abstract small" style="margin-bottom:8px"><b>Reviewer {{ loop.index }}</b><br>{{ a.review.comments_author }}</div>{% endif %}{% endfor %}
+    {% endif %}
+  {% endif %}
+</div>
+{% else %}
+<div class="card muted">No submissions yet.</div>
+{% endfor %}
+{% endblock %}

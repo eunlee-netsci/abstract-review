@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Admin</h1>
+{% include "admin/_nav.html" %}
+{% if not mail_backend %}<div class="flash error">No email backend configured — emails are stored in the <a href="{{ url_for('admin_outbox') }}">Outbox</a> but not sent. You can copy links from there, or set BREVO_API_KEY / SMTP_* on Render.</div>{% endif %}
+<div class="grid">
+  <div class="stat"><span class="muted small">Active submissions</span><b>{{ st.n_active }}</b><span class="small muted">{{ st.n_withdrawn }} withdrawn</span></div>
+  <div class="stat"><span class="muted small">Reviewers</span><b>{{ st.n_reviewers }}</b><span class="small muted">{{ st.n_users }} accounts total</span></div>
+  <div class="stat"><span class="muted small">Reviews done</span><b>{{ st.n_done }} / {{ st.n_asg }}</b><span class="small muted">{{ ((st.n_done / st.n_asg * 100) if st.n_asg else 0)|round|int }}%</span></div>
+  <div class="stat"><span class="muted small">Need reviewers</span><b>{{ st.n_under }}</b><span class="small muted">{{ st.n_conflict }} declared conflicts</span></div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2 style="margin-top:0">Timeline</h2>
+  <table style="max-width:600px">
+    <tr><th>Submissions</th><td>{{ 'open' if submissions_open() else 'closed' }} · deadline {{ fmt_dt(S('submission_deadline')) }}</td></tr>
+    <tr><th>Reviews</th><td>{{ 'open' if reviews_open() else 'closed' }} · deadline {{ fmt_dt(S('review_deadline')) }}</td></tr>
+    <tr><th>Decisions</th><td>{% for k, v in DECISIONS %}{% if k %}{{ v }}: <b>{{ st.dec[k] }}</b> · {% endif %}{% endfor %}undecided: <b>{{ st.dec[''] }}</b></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Actions</h2>
+  <div class="row">
+    <form method="post" action="{{ url_for('admin_remind') }}" onsubmit="return confirm('Email every reviewer who has pending reviews?')">{{ csrf_field() }}<button class="secondary">Send reminders to reviewers with pending reviews</button></form>
+  </div>
+  <h3>Export</h3>
+  <div class="row small">
+    <a class="btn small secondary" href="{{ url_for('export_submissions') }}">submissions.csv</a>
+    <a class="btn small secondary" href="{{ url_for('export_reviews') }}">reviews.csv</a>
+    <a class="btn small secondary" href="{{ url_for('export_reviewers') }}">reviewers.csv</a>
+  </div>
+  <h3>Release decisions</h3>
+  {% if S('decisions_released') == '1' %}
+    <p><span class="badge ok">released</span> Authors can see their decisions{% if S('share_reviews')=='1' %} and reviewer comments{% endif %}.</p>
+    <form method="post" action="{{ url_for('admin_release') }}">{{ csrf_field() }}<input type="hidden" name="action" value="hide"><button class="small danger">Hide decisions again</button></form>
+  {% else %}
+    <form method="post" action="{{ url_for('admin_release') }}" onsubmit="return confirm('Release decisions to all authors?')">{{ csrf_field() }}
+      <div class="checks">
+        <label><input type="checkbox" name="notify" value="1" checked> Email decision letters to submitters</label>
+        <label><input type="checkbox" name="force" value="1"> Release anyway if some are undecided</label>
+      </div>
+      <button>Release decisions</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

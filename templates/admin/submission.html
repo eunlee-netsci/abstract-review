@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "admin/_nav.html" %}
+<h1>#{{ sub.id }} · {{ sub.title }} {% if not sub.active %}<span class="badge err">withdrawn</span>{% endif %}</h1>
+<div class="card">
+  <p><b>Authors:</b> {% for a in sub.authors %}{{ a.name }} ({{ a.affiliation }}{% if a.email %}, {{ a.email }}{% endif %}){% if not loop.last %}; {% endif %}{% endfor %}<br>
+  <b>Submitted by:</b> {{ sub.owner.name }} &lt;{{ sub.owner.email }}&gt;</p>
+  <p>{% for k in sub.keyword_list %}<span class="tag">{{ k }}</span>{% endfor %}</p>
+  <div class="abstract">{{ sub.abstract }}</div>
+  <div class="row" style="margin-top:12px">
+    {% if sub.pdf_name %}<a class="btn small secondary" href="{{ url_for('submission_pdf', sid=sub.id) }}" target="_blank">📄 {{ sub.pdf_name }}</a>{% endif %}
+    <a class="btn small secondary" href="{{ url_for('edit_submission', sid=sub.id) }}">Edit</a>
+    <form class="inline" method="post" action="{{ url_for('withdraw_submission', sid=sub.id) }}">{{ csrf_field() }}
+      {% if sub.active %}<button class="small danger" onclick="return confirm('Withdraw?')">Withdraw</button>{% else %}<input type="hidden" name="restore" value="1"><button class="small secondary">Restore</button>{% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Reviews ({{ st.done }}/{{ st.assigned }}){% if st.avg is not none %} · avg {{ '%.2f'|format(st.avg) }}{% endif %}</h2>
+  {% for a in sub.assignments %}
+  <div style="border-top:1px solid var(--line);padding:10px 0">
+    <div class="row" style="justify-content:space-between">
+      <div><b>{{ a.reviewer.name }}</b> <span class="small muted">{{ a.reviewer.affiliation }} · {{ a.reviewer.email }}</span>
+        {% if a.conflict %}<span class="badge warn">conflict declared</span>{% if a.conflict_note %} <span class="small muted">“{{ a.conflict_note }}”</span>{% endif %}
+        {% elif a.review %}<span class="badge ok">score {{ a.review.score }} · conf {{ a.review.confidence }}</span>
+        {% else %}<span class="badge err">pending</span>{% endif %}</div>
+      <form method="post" action="{{ url_for('admin_unassign', aid=a.id) }}" onsubmit="return confirm('Remove this assignment{{ ' and DELETE the submitted review' if a.review }}?')">{{ csrf_field() }}<button class="small danger">Remove</button></form>
+    </div>
+    {% if a.review %}
+      {% if a.review.comments_author %}<div class="abstract small" style="margin-top:6px"><b>To authors:</b> {{ a.review.comments_author }}</div>{% endif %}
+      {% if a.review.comments_committee %}<div class="abstract small" style="margin-top:6px;background:var(--warn-soft)"><b>Confidential:</b> {{ a.review.comments_committee }}</div>{% endif %}
+    {% endif %}
+  </div>
+  {% else %}<p class="muted">No reviewers assigned.</p>{% endfor %}
+
+  <h3>Add reviewer</h3>
+  <form method="post" action="{{ url_for('admin_assign_one', sid=sub.id) }}" class="row">{{ csrf_field() }}
+    <select name="reviewer_id" style="max-width:600px">
+      <option value="">— choose (best matches first) —</option>
+      {% for c in cands %}<option value="{{ c.r.id }}">{% if c.coi %}⚠ {{ c.coi }} · {% endif %}{{ c.r.name }} ({{ c.r.affiliation }}) · overlap {{ c.overlap }} · load {{ c.load }}</option>{% endfor %}
+    </select>
+    <label style="font-weight:400;margin:0"><input type="checkbox" name="notify" value="1"> email reviewer</label>
+    <button class="small">Assign</button>
+  </form>
+</div>
+
+<form method="post" action="{{ url_for('admin_decision', sid=sub.id) }}" class="card">{{ csrf_field() }}
+  <h2 style="margin-top:0">Decision</h2>
+  <select name="decision" style="max-width:260px">{% for k, v in DECISIONS %}<option value="{{ k }}" {% if (sub.decision or '')==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+  <label>Internal note <span class="hint">(never shown to authors)</span></label>
+  <textarea name="decision_note" rows="2">{{ sub.decision_note }}</textarea>
+  <p><button>Save decision</button></p>
+</form>
+{% endblock %}

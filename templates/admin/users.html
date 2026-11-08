@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>All users ({{ users|length }})</h1>
+{% include "admin/_nav.html" %}
+<div class="card table-wrap">
+<table>
+<tr><th>#</th><th>Name</th><th>Email</th><th>Affiliation</th><th>Submissions</th><th>Reviewer</th><th>Admin</th></tr>
+{% for u in users %}
+<tr>
+  <td>{{ u.id }}</td><td>{{ u.name }}</td><td class="small">{{ u.email }}</td><td class="small">{{ u.affiliation }}</td>
+  <td>{{ u.submissions|length }}</td>
+  {% for role, on in [('reviewer', u.is_reviewer), ('admin', u.is_admin)] %}
+  <td><form method="post" action="{{ url_for('admin_user_role', uid=u.id) }}">{{ csrf_field() }}<input type="hidden" name="role" value="{{ role }}"><input type="hidden" name="on" value="{{ '0' if on else '1' }}">
+    <button class="small {{ '' if on else 'secondary' }}">{{ 'yes' if on else 'no' }}</button></form></td>
+  {% endfor %}
+</tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

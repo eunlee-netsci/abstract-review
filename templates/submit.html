@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{% if new %}New submission{% else %}Edit submission #{{ sub.id }}{% endif %}</h1>
+<form method="post" enctype="multipart/form-data" class="card">{{ csrf_field() }}
+  <label>Title</label><input type="text" name="title" value="{{ sub.title }}" required>
+
+  <label>Authors <span class="hint">(in order; name and affiliation required, email optional)</span></label>
+  <div id="authors">
+  {% for a in (sub.authors or [{}]) %}
+    <div class="authors-row">
+      <input type="text" name="author_name" placeholder="Name" value="{{ a.name }}">
+      <input type="text" name="author_aff" placeholder="Affiliation" value="{{ a.affiliation }}">
+      <input type="email" name="author_email" placeholder="Email" value="{{ a.email }}">
+      <button type="button" class="small secondary" onclick="rm(this)">✕</button>
+    </div>
+  {% endfor %}
+  </div>
+  <button type="button" class="small secondary" onclick="addAuthor()">+ Add author</button>
+
+  <label>Abstract <span class="hint">(plain text, up to {{ S('word_limit') }} words)</span></label>
+  <textarea name="abstract" id="abstract" rows="12" required>{{ sub.abstract }}</textarea>
+  <div class="hint" id="wc"></div>
+
+  {% if conf_keywords() %}
+  <label>Topics <span class="hint">(choose one or more)</span></label>
+  <div class="checks">{% for k in conf_keywords() %}<label><input type="checkbox" name="kw" value="{{ k }}" {% if k in sub.keyword_list %}checked{% endif %}>{{ k }}</label>{% endfor %}</div>
+  {% endif %}
+
+  <label>PDF {% if S('pdf_required')=='1' %}<span class="hint">(required, max {{ S('max_pdf_mb') }} MB)</span>{% else %}<span class="hint">(optional, max {{ S('max_pdf_mb') }} MB)</span>{% endif %}</label>
+  {% if sub.pdf_name %}<p class="small">Current file: <b>{{ sub.pdf_name }}</b> — upload a new file only to replace it.</p>{% endif %}
+  <input type="file" name="pdf" accept="application/pdf">
+  <p class="hint">⚠ Review is double-blind: remove author names, affiliations and acknowledgements from the PDF.</p>
+
+  <p style="margin-top:20px"><button>{% if new %}Submit{% else %}Save changes{% endif %}</button>
+  <a class="btn secondary" href="{{ url_for('author_home') }}">Cancel</a></p>
+</form>
+<script>
+const LIMIT = {{ S('word_limit')|int }};
+function addAuthor(){const d=document.querySelector('#authors .authors-row').cloneNode(true);d.querySelectorAll('input').forEach(i=>i.value='');document.getElementById('authors').appendChild(d);}
+function rm(b){const rows=document.querySelectorAll('#authors .authors-row');if(rows.length>1)b.parentElement.remove();else b.parentElement.querySelectorAll('input').forEach(i=>i.value='');}
+const ta=document.getElementById('abstract'),wc=document.getElementById('wc');
+function count(){const n=(ta.value.trim().match(/\S+/g)||[]).length;wc.textContent=n+(LIMIT?' / '+LIMIT:'')+' words';wc.style.color=(LIMIT&&n>LIMIT)?'#b42318':'';}
+ta.addEventListener('input',count);count();
+</script>
+{% endblock %}

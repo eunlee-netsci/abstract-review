@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Settings</h1>
+{% include "admin/_nav.html" %}
+<form method="post" class="card" style="max-width:760px">{{ csrf_field() }}
+  <label>Conference name</label><input type="text" name="conf_name" value="{{ S('conf_name') }}">
+  <label>Information shown on the front page</label><textarea name="conf_info" rows="4">{{ S('conf_info') }}</textarea>
+  <div class="checks"><label><input type="checkbox" name="submissions_open" value="1" {% if S('submissions_open')=='1' %}checked{% endif %}> Submissions open (also closes automatically at the deadline)</label></div>
+  <label>Submission deadline <span class="hint">(KST)</span></label><input type="datetime-local" name="submission_deadline" value="{{ S('submission_deadline') }}" style="max-width:260px">
+  <label>Review deadline <span class="hint">(KST — reviewers can edit until then)</span></label><input type="datetime-local" name="review_deadline" value="{{ S('review_deadline') }}" style="max-width:260px">
+  <label>Topics <span class="hint">(one per line; authors and reviewers pick from these, used for matching)</span></label><textarea name="keywords" rows="7">{{ S('keywords') }}</textarea>
+  <div class="row">
+    <div><label>Abstract word limit</label><input type="number" name="word_limit" value="{{ S('word_limit') }}" style="max-width:140px"></div>
+    <div><label>Max PDF size (MB)</label><input type="number" step="0.5" name="max_pdf_mb" value="{{ S('max_pdf_mb') }}" style="max-width:140px"></div>
+    <div><label>Reviewers per abstract</label><input type="number" name="reviews_per_paper" value="{{ S('reviews_per_paper') }}" style="max-width:140px"></div>
+  </div>
+  <div class="checks" style="margin-top:12px">
+    <label><input type="checkbox" name="pdf_required" value="1" {% if S('pdf_required')=='1' %}checked{% endif %}> PDF required</label>
+    <label><input type="checkbox" name="share_reviews" value="1" {% if S('share_reviews')=='1' %}checked{% endif %}> Show reviewer comments to authors after release</label>
+  </div>
+  <p><button>Save settings</button></p>
+</form>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Reviewers ({{ rows|length }})</h1>
+{% include "admin/_nav.html" %}
+<form method="post" class="card">{{ csrf_field() }}
+  <h2 style="margin-top:0">Add reviewers</h2>
+  <p class="small muted">One per line: <code>name,email,affiliation,topic1;topic2</code>. Topics should match the conference topic list (Settings). Existing accounts are upgraded to reviewer.</p>
+  <textarea name="csv" rows="6" placeholder="Jane Doe,jane@univ.edu,University X,Network science;Data science"></textarea>
+  <div class="checks"><label><input type="checkbox" name="invite" value="1" checked> Email invitations to new reviewers</label></div>
+  <p><button>Add</button></p>
+</form>
+{% if unknown_kw %}<div class="flash error">Reviewer topics not in the conference topic list (won't match any abstract): {{ unknown_kw|join(', ') }}</div>{% endif %}
+<div class="row" style="margin-bottom:10px">
+  <form method="post" action="{{ url_for('admin_invite_pending') }}" onsubmit="return confirm('Re-send invitations to all reviewers who never logged in?')">{{ csrf_field() }}<button class="small secondary">Re-invite everyone who has never logged in</button></form>
+</div>
+<div class="card table-wrap">
+<table>
+<tr><th>Name</th><th>Email</th><th>Affiliation / topics</th><th>Done</th><th>Last login</th><th></th></tr>
+{% for x in rows %}{% set r = x.r %}
+<tr>
+  <td>{{ r.name }}</td>
+  <td class="small">{{ r.email }}</td>
+  <td>
+    <form method="post" action="{{ url_for('admin_reviewer_keywords', uid=r.id) }}">{{ csrf_field() }}
+      <input type="text" name="affiliation" value="{{ r.affiliation }}" style="margin-bottom:4px">
+      <input type="text" name="keywords" value="{{ r.keyword_list|join('; ') }}" placeholder="topics; separated; by semicolons">
+      <button class="small secondary" style="margin-top:4px">save</button>
+    </form>
+  </td>
+  <td>{{ x.done }}/{{ x.assigned }}{% if x.conflicts %} <span class="badge warn">C{{ x.conflicts }}</span>{% endif %}</td>
+  <td class="small">{{ r.last_login.strftime('%Y-%m-%d') if r.last_login else 'never' }}</td>
+  <td>
+    <form class="inline" method="post" action="{{ url_for('admin_invite', uid=r.id) }}">{{ csrf_field() }}<button class="small secondary">invite</button></form>
+    <form class="inline" method="post" action="{{ url_for('admin_remove_reviewer', uid=r.id) }}" onsubmit="return confirm('Remove reviewer role (and pending assignments)?')">{{ csrf_field() }}<button class="small danger">remove</button></form>
+  </td>
+</tr>
+{% else %}<tr><td colspan="6" class="muted">No reviewers yet.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

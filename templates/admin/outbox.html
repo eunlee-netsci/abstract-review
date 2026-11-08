@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Outbox</h1>
+{% include "admin/_nav.html" %}
+<p class="small">Mail backend: <b>{{ mail_backend or 'none (emails are stored here only)' }}</b> ·
+<a href="?status=">all</a> · <a href="?status=problem">not sent</a></p>
+<form method="post" action="{{ url_for('admin_outbox_retry') }}">{{ csrf_field() }}<button class="small secondary">Retry all unsent</button></form>
+<div class="card table-wrap" style="margin-top:10px">
+<table>
+<tr><th>When (UTC)</th><th>To</th><th>Subject</th><th>Status</th></tr>
+{% for l in logs %}
+<tr>
+  <td class="small">{{ l.created_at.strftime('%m-%d %H:%M') }}</td>
+  <td class="small">{{ l.to }}</td>
+  <td><details><summary>{{ l.subject }}</summary><pre class="mail">{{ l.body }}</pre></details></td>
+  <td><span class="badge {{ 'ok' if l.status=='sent' else ('warn' if l.status=='queued' else 'err') }}">{{ l.status }}</span>{% if l.error %}<div class="small muted">{{ l.error[:200] }}</div>{% endif %}</td>
+</tr>
+{% else %}<tr><td colspan="4" class="muted">Empty.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

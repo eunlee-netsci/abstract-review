@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ S('conf_name') }}{% endblock %}</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--muted:#667085;--line:#e3e6eb;--accent:#2457c5;--accent-soft:#e8eefb;--ok:#127a46;--ok-soft:#e5f5ec;--err:#b42318;--err-soft:#fdecea;--warn:#a15c00;--warn-soft:#fff4e0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header{background:var(--card);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;flex-wrap:wrap}
+.brand{font-weight:700;color:var(--ink);font-size:16px}
+nav{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:14px}
+main{padding:24px 16px 60px}
+h1{font-size:22px;margin:0 0 16px}h2{font-size:17px;margin:24px 0 10px}h3{font-size:15px;margin:16px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+.flash{padding:10px 14px;border-radius:8px;margin-bottom:12px;background:var(--accent-soft)}
+.flash.ok{background:var(--ok-soft);color:var(--ok)}.flash.error{background:var(--err-soft);color:var(--err)}
+label{display:block;font-weight:600;margin:12px 0 4px;font-size:14px}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=datetime-local],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:120px;resize:vertical}
+.hint{color:var(--muted);font-size:13px;font-weight:400}
+button,.btn{display:inline-block;padding:8px 14px;border-radius:7px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-size:14px;cursor:pointer}
+button.secondary,.btn.secondary{background:#fff;color:var(--accent)}
+button.danger{background:#fff;color:var(--err);border-color:var(--err)}
+button.link{background:none;border:none;color:var(--accent);padding:0;font-size:14px}
+button.small,.btn.small{padding:4px 9px;font-size:13px}
+form.inline{display:inline}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:13px;white-space:nowrap}
+.table-wrap{overflow-x:auto}
+.muted{color:var(--muted)}.small{font-size:13px}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;margin:1px 2px 1px 0}
+.badge{display:inline-block;padding:1px 8px;border-radius:5px;font-size:12px;font-weight:600;background:#eef0f3;color:var(--muted)}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}.badge.err{background:var(--err-soft);color:var(--err)}.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stat b{display:block;font-size:24px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.checks label{display:inline-flex;gap:6px;align-items:center;font-weight:400;margin:4px 14px 4px 0}
+.abstract{white-space:pre-wrap;background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.authors-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:6px}
+@media(max-width:640px){.authors-row{grid-template-columns:1fr}}
+pre.mail{white-space:pre-wrap;font-size:12px;background:#fafbfc;padding:8px;border-radius:6px;margin:4px 0 0}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="brand" href="{{ url_for('index') }}">{{ S('conf_name') }}</a>
+  <nav>
+  {% if current_user.is_authenticated %}
+    <a href="{{ url_for('author_home') }}">My submissions</a>
+    {% if current_user.is_reviewer %}<a href="{{ url_for('reviewer_home') }}">My reviews</a>{% endif %}
+    {% if current_user.is_admin %}<a href="{{ url_for('admin_home') }}">Admin</a>{% endif %}
+    <a href="{{ url_for('profile') }}">{{ current_user.name or current_user.email }}</a>
+    <form method="post" action="{{ url_for('logout') }}" class="inline">{{ csrf_field() }}<button class="link">Log out</button></form>
+  {% else %}
+    <a href="{{ url_for('login') }}">Log in</a><a href="{{ url_for('register') }}">Register</a>
+  {% endif %}
+  </nav>
+</div></header>
+<main class="wrap">
+{% with msgs = get_flashed_messages(with_categories=true) %}{% for c, m in msgs %}<div class="flash {{ c }}">{{ m }}</div>{% endfor %}{% endwith %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

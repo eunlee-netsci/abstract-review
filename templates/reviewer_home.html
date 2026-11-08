@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>My reviews</h1>
+<p class="muted small">Review deadline: {{ fmt_dt(S('review_deadline')) }}{% if not reviews_open() %} · <b>closed</b>{% endif %}
+ · <a href="{{ url_for('profile') }}">Edit my reviewing topics</a></p>
+{% set todo = asg|rejectattr('conflict')|selectattr('submission.active')|list %}
+<p>{{ todo|selectattr('review')|list|length }} of {{ todo|length }} completed.</p>
+<div class="card table-wrap">
+<table>
+<tr><th>#</th><th>Title</th><th>Topics</th><th>Status</th><th></th></tr>
+{% for a in asg %}
+<tr>
+  <td>{{ a.submission_id }}</td>
+  <td>{{ a.submission.title }}</td>
+  <td>{% for k in a.submission.keyword_list %}<span class="tag">{{ k }}</span>{% endfor %}</td>
+  <td>
+    {% if not a.submission.active %}<span class="badge">withdrawn</span>
+    {% elif a.conflict %}<span class="badge warn">conflict declared</span>
+    {% elif a.review %}<span class="badge ok">done · {{ a.review.score }}</span>
+    {% else %}<span class="badge err">pending</span>{% endif %}
+  </td>
+  <td>{% if a.submission.active and not a.conflict %}<a class="btn small {{ 'secondary' if a.review }}" href="{{ url_for('review', aid=a.id) }}">{{ 'Edit' if a.review else 'Review' }}</a>{% endif %}</td>
+</tr>
+{% else %}
+<tr><td colspan="5" class="muted">No abstracts assigned yet.</td></tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

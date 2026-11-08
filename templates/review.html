@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="small"><a href="{{ url_for('reviewer_home') }}">← My reviews</a></p>
+<h1>#{{ sub.id }} · {{ sub.title }}</h1>
+<div class="card">
+  <p>{% for k in sub.keyword_list %}<span class="tag">{{ k }}</span>{% endfor %}</p>
+  <div class="abstract">{{ sub.abstract }}</div>
+  {% if sub.pdf_name %}<p><a class="btn secondary small" href="{{ url_for('submission_pdf', sid=sub.id) }}" target="_blank">📄 Open PDF</a></p>{% endif %}
+</div>
+
+<form method="post" class="card">{{ csrf_field() }}
+  <h2 style="margin-top:0">Your review</h2>
+  {% if not can_edit %}<div class="flash error">The review period is closed; this review is read-only.</div>{% endif %}
+  <label>Overall score</label>
+  <div class="checks">{% for v, t in SCORE_LABEL.items() %}<label><input type="radio" name="score" value="{{ v }}" {% if form.score == v|string %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>{{ t }}</label>{% endfor %}</div>
+  <label>Confidence</label>
+  <div class="checks">{% for v, t in CONF_LABEL.items() %}<label><input type="radio" name="confidence" value="{{ v }}" {% if form.confidence == v|string %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>{{ t }}</label>{% endfor %}</div>
+  <label>Comments to the authors <span class="hint">{% if S('share_reviews')=='1' %}(shared with authors, anonymously){% else %}(not shared with authors this year){% endif %}</span></label>
+  <textarea name="comments_author" rows="7" {% if not can_edit %}disabled{% endif %}>{{ form.comments_author }}</textarea>
+  <label>Confidential comments to the program committee <span class="hint">(optional)</span></label>
+  <textarea name="comments_committee" rows="3" {% if not can_edit %}disabled{% endif %}>{{ form.comments_committee }}</textarea>
+  {% if can_edit %}<p><button>Save review</button></p>{% endif %}
+</form>
+
+{% if can_edit and not a.review %}
+<form method="post" action="{{ url_for('declare_conflict', aid=a.id) }}" class="card" onsubmit="return confirm('Declare a conflict of interest for this abstract?')">{{ csrf_field() }}
+  <h3 style="margin-top:0">Conflict of interest?</h3>
+  <p class="small muted">If you recognize the authors' work as that of a close collaborator, advisor/advisee, or someone at your institution, declare a conflict and the organizers will reassign it.</p>
+  <input type="text" name="note" placeholder="Optional note (only visible to organizers)">
+  <p><button class="danger small">Declare conflict</button></p>
+</form>
+{% endif %}
+{% endblock %}

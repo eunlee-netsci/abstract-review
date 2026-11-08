@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:640px">
+<h1>Profile</h1>
+<form method="post">{{ csrf_field() }}
+  <label>Email</label><input type="text" value="{{ current_user.email }}" disabled>
+  <label>Full name</label><input type="text" name="name" value="{{ current_user.name }}">
+  <label>Affiliation <span class="hint">(used to detect conflicts of interest)</span></label><input type="text" name="affiliation" value="{{ current_user.affiliation }}">
+  {% if current_user.is_reviewer %}
+  <label>Reviewing topics <span class="hint">(used to match you with abstracts)</span></label>
+  <div class="checks">{% for k in conf_keywords() %}<label><input type="checkbox" name="kw" value="{{ k }}" {% if k in current_user.keyword_list %}checked{% endif %}>{{ k }}</label>{% endfor %}</div>
+  {% set extra = current_user.keyword_list|reject('in', conf_keywords())|list %}
+  <label>Other topics <span class="hint">(semicolon-separated)</span></label><input type="text" name="kw_extra" value="{{ extra|join('; ') }}">
+  {% endif %}
+  <h3>Change password <span class="hint">(optional)</span></h3>
+  <label>Current password</label><input type="password" name="current_password">
+  <label>New password</label><input type="password" name="new_password">
+  <p><button>Save</button></p>
+</form>
+</div>
+{% endblock %}

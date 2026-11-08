@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Automatic assignment</h1>
+{% include "admin/_nav.html" %}
+<div class="card">
+  <p>{{ subs|length }} active submissions · {{ reviewers|length }} reviewers.</p>
+  <p class="small muted">Only <b>missing</b> slots are filled; existing assignments are kept. Reviewers are never assigned to their own abstract, a co-authored abstract, or an abstract with an author from the same affiliation or institutional email domain. Papers with the fewest eligible reviewers are filled first; within a paper, reviewers below the load cap and with the most topic overlap are preferred.</p>
+  <form method="post" onsubmit="return confirm('Create assignments now?')">{{ csrf_field() }}
+    <label>Reviewers per abstract</label><input type="number" name="k" min="1" max="10" value="{{ S('reviews_per_paper') }}" style="max-width:120px">
+    <div class="checks"><label><input type="checkbox" name="notify" value="1"> Email each reviewer about new assignments now</label></div>
+    <p><button>Run auto-assign</button></p>
+  </form>
+  <form method="post" action="{{ url_for('admin_notify_all') }}" onsubmit="return confirm('Email all reviewers with pending reviews?')">{{ csrf_field() }}
+    <button class="secondary small">Email all reviewers their pending assignments</button>
+    <span class="hint">— use this after checking assignments manually</span>
+  </form>
+</div>
+{% if result %}
+<div class="card">
+  <h2 style="margin-top:0">Result</h2>
+  <p>New assignments: <b>{{ result.n_new }}</b> across {{ result.n_rev }} reviewers · load cap {{ result.cap }} · emails queued {{ result.notified }}</p>
+  {% if result.unfilled %}<div class="flash error">Could not fully staff {{ result.unfilled|length }} abstract(s) (not enough eligible reviewers):
+    {% for s in result.unfilled %}<a href="{{ url_for('admin_submission', sid=s.id) }}">#{{ s.id }}</a> {% endfor %}</div>{% endif %}
+</div>
+{% endif %}
+<div class="card table-wrap">
+  <h2 style="margin-top:0">Reviewer load</h2>
+  <table><tr><th>Reviewer</th><th>Affiliation</th><th>Topics</th><th>Assigned</th></tr>
+  {% for r in reviewers|sort(attribute='name') %}
+  <tr><td>{{ r.name }}</td><td class="small">{{ r.affiliation }}</td><td>{% for k in r.keyword_list %}<span class="tag">{{ k }}</span>{% endfor %}</td><td>{{ load[r.id] }}</td></tr>
+  {% endfor %}</table>
+</div>
+{% endblock %}
